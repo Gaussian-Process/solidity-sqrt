@@ -2,7 +2,7 @@ pragma solidity 0.8.10;
 
 // based on https://github.com/Rari-Capital/solmate/blob/main/src/utils/FixedPointMathLib.sol
 library FixedPointMathLib {
-    function sqrt(uint256 x) external pure returns (uint256 z) {
+    function sqrt(uint256 x) internal pure returns (uint256 z) {
         assembly {
             // This segment is to get a reasonable initial estimate for the Babylonian method.
             // If the initial estimate is bad, the number of correct bits increases ~linearly
@@ -12,7 +12,7 @@ library FixedPointMathLib {
             // y in [256, 256*2^16). We ensure y>= 256 so that the relative difference
             // between y and y+1 is small. If x < 256 this is not possible, but those cases
             // are easy enough to verify exhaustively.
-            z := 3 // The 'correct' value is 1, but this saves a multiply by 3 later
+            z := 181 // The 'correct' value is 1, but this saves a multiply later
             let y := x
             // Note that we check y>= 2^(k + 8) but shift right by k bits each branch,
             // this is to ensure that if x >= 256, then y >= 256.
@@ -37,10 +37,9 @@ library FixedPointMathLib {
             // Correctness can be checked exhaustively for x < 256, so we assume y >= 256.
             // Then z*sqrt(y) is within sqrt(257)/sqrt(256) of x, or about 20bps.
 
-            // The estimate sqrt(x) = 0.75 * 0.25 * (x+1) is off by a factor of 2.67 when x=1
-            // and off by a factor of 3 when x = 256 or 1/256.
-            // In the worst case, this needs seven Babylonian iterations.
-            z := shr(12, mul(z, add(y, 65536)))  // A multiply by 3 is saved from the initial z := 3
+            // The estimate sqrt(x) = (181/1024) * (x+1) is off by a factor of ~2.83 both when x=1
+            // and when x = 256 or 1/256. In the worst case, this needs seven Babylonian iterations.
+            z := shr(18, mul(z, add(y, 65536))) // A multiply is saved from the initial z := 181
 
             // Run the Babylonian method seven times. This should be enough given initial estimate.
             // Possibly with a quadratic/cubic polynomial above we could get 4-6.
